@@ -3,10 +3,10 @@
 // Author: Karan Manoj Shah <kmshah2@cs.cmu.edu>
 
 use axum::{
-  extract::{rejection::JsonRejection, Path, Query, State},
+  Json, Router,
+  extract::{Path, Query, State, rejection::JsonRejection},
   http::StatusCode,
   routing::{get, post},
-  Json, Router,
 };
 use validator::Validate;
 
@@ -89,7 +89,7 @@ async fn create_customer(
 async fn fetch_customer_by_id(
   State(alb_conn_state): State<HttpConnectionState>,
   Path(id): Path<u64>,
-) -> Result<(StatusCode, Json<CustomerWithId>), StatusCode> {
+) -> Result<(StatusCode, Json<CustomerNoAddress>), StatusCode> {
   match alb_conn_state
     .http_client
     .get(alb_conn_state.endpoint_url + "/customers/id/" + &id.to_string())
@@ -100,7 +100,10 @@ async fn fetch_customer_by_id(
       let status = response.status();
       if status.is_success() {
         match response.json::<CustomerWithId>().await {
-          Ok(customer) => Ok((StatusCode::OK, Json(customer))),
+          Ok(customer) => Ok((
+            StatusCode::OK,
+            Json(CustomerNoAddress::from_cust_with_id(customer)),
+          )),
           _ => Err(status),
         }
       } else {
@@ -115,7 +118,7 @@ async fn fetch_customer_by_id(
 async fn fetch_customer_by_user_id(
   State(alb_conn_state): State<HttpConnectionState>,
   Query(params): Query<UserIdQuery>,
-) -> Result<(StatusCode, Json<CustomerWithId>), StatusCode> {
+) -> Result<(StatusCode, Json<CustomerNoAddress>), StatusCode> {
   if params.validate().is_err() {
     return Err(StatusCode::BAD_REQUEST);
   }
@@ -130,7 +133,10 @@ async fn fetch_customer_by_user_id(
       let status = response.status();
       if status.is_success() {
         match response.json::<CustomerWithId>().await {
-          Ok(customer) => Ok((StatusCode::OK, Json(customer))),
+          Ok(customer) => Ok((
+            StatusCode::OK,
+            Json(CustomerNoAddress::from_cust_with_id(customer)),
+          )),
           _ => Err(status),
         }
       } else {

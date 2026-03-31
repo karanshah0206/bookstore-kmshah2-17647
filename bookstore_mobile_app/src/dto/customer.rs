@@ -39,11 +39,32 @@ pub struct CustomerWithId {
   pub phone: String,
   #[serde(rename = "address")]
   pub address_1: String,
-  #[serde(rename = "address1")]
+  #[serde(rename = "address2")]
   pub address_2: String,
   pub city: String,
   pub state: String,
   pub zipcode: String,
+}
+
+/// Schema for a customer entity without address.
+#[derive(Serialize)]
+pub struct CustomerNoAddress {
+  pub id: u64,
+  #[serde(rename = "userId")]
+  pub user_id: String,
+  pub name: String,
+  pub phone: String,
+}
+
+impl CustomerNoAddress {
+  pub fn from_cust_with_id(customer: CustomerWithId) -> Self {
+    CustomerNoAddress {
+      id: customer.id,
+      user_id: customer.user_id,
+      name: customer.name,
+      phone: customer.phone,
+    }
+  }
 }
 
 /// Expected query schema for fetch customer by user ID endpoint.

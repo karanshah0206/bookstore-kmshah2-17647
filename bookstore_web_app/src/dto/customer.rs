@@ -39,7 +39,7 @@ pub struct CustomerWithId {
   pub phone: String,
   #[serde(rename = "address")]
   pub address_1: String,
-  #[serde(rename = "address1")]
+  #[serde(rename = "address2")]
   pub address_2: String,
   pub city: String,
   pub state: String,
