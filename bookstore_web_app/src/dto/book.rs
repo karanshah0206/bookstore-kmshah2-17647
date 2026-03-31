@@ -4,16 +4,22 @@
 
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Number;
+use validator::Validate;
 
 /// Schema for book entity requests/responses.
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Validate)]
 pub struct Book {
   #[serde(rename = "ISBN")]
+  #[validate(length(min = 1))]
   pub isbn: String,
+  #[validate(length(min = 1))]
   pub title: String,
   #[serde(rename = "Author")]
+  #[validate(length(min = 1))]
   pub author: String,
+  #[validate(length(min = 1))]
   pub description: String,
+  #[validate(length(min = 1))]
   pub genre: String,
   #[serde(deserialize_with = "deserialize_price")]
   pub price: f64,
