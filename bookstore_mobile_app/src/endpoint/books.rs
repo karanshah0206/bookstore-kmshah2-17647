@@ -3,10 +3,10 @@
 // Author: Karan Manoj Shah <kmshah2@cs.cmu.edu>
 
 use axum::{
-  extract::{rejection::JsonRejection, Path, State},
+  Json, Router,
+  extract::{Path, State, rejection::JsonRejection},
   http::StatusCode,
   routing::{get, post, put},
-  Json, Router,
 };
 use validator::Validate;
 
@@ -148,7 +148,10 @@ async fn fetch_book(
       let status = response.status();
       if status.is_success() {
         match response.json::<BookWithSummary>().await {
-          Ok(book) => Ok((StatusCode::OK, Json(book))),
+          Ok(mut book) => {
+            transform_genre(&mut book);
+            Ok((StatusCode::OK, Json(book)))
+          }
           _ => Err(status),
         }
       } else {

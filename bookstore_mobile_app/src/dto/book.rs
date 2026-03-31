@@ -64,3 +64,10 @@ where
     .as_f64()
     .ok_or_else(|| serde::de::Error::custom("Badly formatted price attribute."))
 }
+
+/// Transform genre in book fetch response to a mobile-friendly version.
+pub fn transform_genre(book: &mut BookWithSummary) {
+  if book.genre == "non-fiction" {
+    book.genre = "3".to_string();
+  }
+}
