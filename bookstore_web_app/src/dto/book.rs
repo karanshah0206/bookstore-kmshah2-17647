@@ -23,7 +23,7 @@ pub struct Book {
   pub genre: String,
   #[serde(deserialize_with = "deserialize_price")]
   pub price: f64,
-  pub quantity: usize,
+  pub quantity: u64,
 }
 
 impl Book {
@@ -35,7 +35,7 @@ impl Book {
     description: String,
     genre: String,
     price: f64,
-    quantity: usize,
+    quantity: u64,
   ) -> Self {
     Book {
       isbn,
@@ -61,7 +61,7 @@ pub struct BookWithSummary {
   pub genre: String,
   #[serde(deserialize_with = "deserialize_price")]
   pub price: f64,
-  pub quantity: usize,
+  pub quantity: u64,
   pub summary: String,
 }
 
@@ -74,7 +74,7 @@ impl BookWithSummary {
     description: String,
     genre: String,
     price: f64,
-    quantity: usize,
+    quantity: u64,
     summary: String,
   ) -> Self {
     BookWithSummary {

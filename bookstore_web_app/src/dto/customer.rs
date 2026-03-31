@@ -57,7 +57,7 @@ impl Customer {
 /// Schema for customer entity with ID requests/responses.
 #[derive(Deserialize, Serialize)]
 pub struct CustomerWithId {
-  pub id: usize,
+  pub id: u64,
   #[serde(rename = "userId")]
   pub user_id: String,
   pub name: String,
@@ -74,7 +74,7 @@ pub struct CustomerWithId {
 impl CustomerWithId {
   /// Create a new customer with ID response entity.
   pub fn new(
-    id: usize,
+    id: u64,
     user_id: String,
     name: String,
     phone: String,

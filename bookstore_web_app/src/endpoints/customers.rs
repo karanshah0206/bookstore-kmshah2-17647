@@ -48,7 +48,7 @@ async fn create_customer(
 
 /// Handler to fetch customer details using an ID key.
 async fn fetch_customer_by_id(
-  Path(id): Path<usize>,
+  Path(id): Path<u64>,
 ) -> Result<(StatusCode, Json<CustomerWithId>), StatusCode> {
   todo!();
 }
