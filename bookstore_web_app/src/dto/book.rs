@@ -4,9 +4,9 @@
 
 use serde::{Deserialize, Serialize};
 
-/// Expected request schema for creating a new book entity.
-#[derive(Deserialize)]
-pub struct CreateBookRequest {
+/// Schema for book entity requests/responses.
+#[derive(Deserialize, Serialize)]
+pub struct Book {
   pub isbn: String,
   pub title: String,
   pub author: String,
@@ -16,20 +16,8 @@ pub struct CreateBookRequest {
   pub quantity: usize,
 }
 
-/// Response schema for successfully creating a new book entity.
-#[derive(Serialize)]
-pub struct CreatedBookResponse {
-  pub isbn: String,
-  pub title: String,
-  pub author: String,
-  pub description: String,
-  pub genre: String,
-  pub price: f64,
-  pub quantity: usize,
-}
-
-impl CreatedBookResponse {
-  /// Create a book creation success response.
+impl Book {
+  /// Create a book entity response.
   pub fn new(
     isbn: String,
     title: String,
@@ -39,7 +27,7 @@ impl CreatedBookResponse {
     price: f64,
     quantity: usize,
   ) -> Self {
-    CreatedBookResponse {
+    Book {
       isbn,
       title,
       author,
@@ -51,15 +39,40 @@ impl CreatedBookResponse {
   }
 }
 
-/// Response schema for failure in creating a new book entity.
-#[derive(Serialize)]
-pub struct FailedBookCreationResponse {
-  pub message: String,
+/// Schema for book entity requests/responses.
+#[derive(Deserialize, Serialize)]
+pub struct SummarizedBook {
+  pub isbn: String,
+  pub title: String,
+  pub author: String,
+  pub description: String,
+  pub genre: String,
+  pub price: f64,
+  pub quantity: usize,
+  pub summary: String,
 }
 
-impl FailedBookCreationResponse {
-  /// Create a book creation failure response.
-  pub fn new(message: String) -> Self {
-    FailedBookCreationResponse { message }
+impl SummarizedBook {
+  /// Create a book entity response.
+  pub fn new(
+    isbn: String,
+    title: String,
+    author: String,
+    description: String,
+    genre: String,
+    price: f64,
+    quantity: usize,
+    summary: String,
+  ) -> Self {
+    SummarizedBook {
+      isbn,
+      title,
+      author,
+      description,
+      genre,
+      price,
+      quantity,
+      summary,
+    }
   }
 }
