@@ -15,8 +15,8 @@ use crate::state::tcp::HttpConnectionState;
 #[tokio::main]
 async fn main() {
   // Networking constants.
-  const BIND_ADDR: &'static str = "0.0.0.0:80";
-  const ALB_ENDPOINT: &'static str = "localhost:3000";
+  const BIND_ADDR: &str = "0.0.0.0:80";
+  const ALB_ENDPOINT: &str = "localhost:3000";
   const ALB_CONN_TIMEOUT: u64 = 10; // seconds
 
   // Establish stateful connection with internal application load balancer.
