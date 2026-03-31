@@ -3,16 +3,25 @@
 // Author: Karan Manoj Shah <kmshah2@cs.cmu.edu>
 
 use axum::{
-  Json,
+  Json, Router,
   extract::{Path, Query, rejection::JsonRejection},
   http::StatusCode,
+  routing::{get, post},
 };
 use validator::Validate;
 
 use crate::dto::{customer::*, failure::*};
 
-/// Endpoint to enter a new customer in the registry.
-pub async fn create_customer(
+/// Construct and return a router for all customer-specific endpoints.
+pub fn get_router() -> Router {
+  Router::new()
+    .route("/customers", post(create_customer))
+    .route("/customers", get(fetch_customer_by_user_id))
+    .route("/customers/{id}", get(fetch_customer_by_id))
+}
+
+/// Handler to enter a new customer in the registry.
+async fn create_customer(
   payload: Result<Json<Customer>, JsonRejection>,
 ) -> Result<(StatusCode, Json<CustomerWithId>), (StatusCode, Json<Failure>)> {
   let payload = match payload {
@@ -37,15 +46,15 @@ pub async fn create_customer(
   todo!();
 }
 
-/// Endpoint to fetch customer details using an ID key.
-pub async fn fetch_customer_by_id(
+/// Handler to fetch customer details using an ID key.
+async fn fetch_customer_by_id(
   Path(id): Path<usize>,
 ) -> Result<(StatusCode, Json<CustomerWithId>), StatusCode> {
   todo!();
 }
 
-/// Endpoint to fetch customer details using a user ID key.
-pub async fn fetch_customer_by_user_id(
+/// Handler to fetch customer details using a user ID key.
+async fn fetch_customer_by_user_id(
   Query(params): Query<UserIdQuery>,
 ) -> Result<(StatusCode, Json<CustomerWithId>), StatusCode> {
   if params.validate().is_err() {
