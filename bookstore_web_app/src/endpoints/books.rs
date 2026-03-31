@@ -1,9 +1,10 @@
+// Bookstore Web App Service
+//! Book-specific endpoint handlers for the Bookstore Web App Service.
+// Author: Karan Manoj Shah <kmshah2@cs.cmu.edu>
+
 use axum::{Json, extract::Path, http::StatusCode};
 
-use crate::dto::{
-  book::{Book, SummarizedBook},
-  failure::Failure,
-};
+use crate::dto::{book::*, failure::*};
 
 /// Endpoint to enter a new book in the registry.
 pub async fn create_book(
