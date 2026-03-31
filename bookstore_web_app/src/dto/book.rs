@@ -2,7 +2,8 @@
 //! Data Transfer Objects for Book Entities.
 // Author: Karan Manoj Shah <kmshah2@cs.cmu.edu>
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
+use serde_json::Number;
 
 /// Schema for book entity requests/responses.
 #[derive(Deserialize, Serialize)]
@@ -14,6 +15,7 @@ pub struct Book {
   pub author: String,
   pub description: String,
   pub genre: String,
+  #[serde(deserialize_with = "deserialize_price")]
   pub price: f64,
   pub quantity: usize,
 }
@@ -51,6 +53,7 @@ pub struct BookWithSummary {
   pub author: String,
   pub description: String,
   pub genre: String,
+  #[serde(deserialize_with = "deserialize_price")]
   pub price: f64,
   pub quantity: usize,
   pub summary: String,
@@ -79,4 +82,27 @@ impl BookWithSummary {
       summary,
     }
   }
+}
+
+/// Custom deserializer for the price attribute to validate 0-2 decimal places.
+fn deserialize_price<'de, D>(deserializer: D) -> Result<f64, D::Error>
+where
+  D: Deserializer<'de>,
+{
+  let num: Number = Deserialize::deserialize(deserializer)?;
+  let price_str = num.to_string();
+
+  if let Some(dot_index) = price_str.find('.') {
+    let decimal_count = price_str.len() - dot_index - 1;
+
+    if decimal_count > 2 {
+      return Err(serde::de::Error::custom(format!(
+        "Price {price_str} has {decimal_count} decimal places; must be at most 2."
+      )));
+    }
+  }
+
+  num
+    .as_f64()
+    .ok_or_else(|| serde::de::Error::custom("Badly formatted price attribute."))
 }
