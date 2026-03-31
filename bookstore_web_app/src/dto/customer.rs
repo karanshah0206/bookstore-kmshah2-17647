@@ -88,3 +88,10 @@ impl CustomerWithId {
     }
   }
 }
+
+/// Expected query schema for fetch customer by user ID endpoint.
+#[derive(Deserialize)]
+pub struct UserIdQuery {
+  #[serde(rename = "userId")]
+  pub user_id: String,
+}

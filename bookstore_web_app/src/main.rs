@@ -10,7 +10,7 @@ use axum::{
   routing::{get, post, put},
 };
 
-use crate::endpoints::books::*;
+use crate::endpoints::{books::*, customers::*};
 
 /// Initialize the service routes and execute the service.
 #[tokio::main]
@@ -18,9 +18,12 @@ async fn main() {
   let app = Router::new()
     .route("/status", get(status))
     .route("/books", post(create_book))
-    .route("/books/:isbn", put(update_book))
-    .route("/books/:isbn", get(fetch_book))
-    .route("/books/isbn/:isbn", get(fetch_book));
+    .route("/books/{isbn}", put(update_book))
+    .route("/books/{isbn}", get(fetch_book))
+    .route("/books/isbn/{isbn}", get(fetch_book))
+    .route("/customers", post(create_customer))
+    .route("/customers", get(fetch_customer_by_user_id))
+    .route("/customers/{id}", get(fetch_customer_by_id));
 
   let listener = tokio::net::TcpListener::bind("0.0.0.0:80").await.unwrap();
 
@@ -29,5 +32,5 @@ async fn main() {
 
 /// Endpoint to indicate Indicate that the service is healthy.
 async fn status() -> &'static str {
-  "Healthy"
+  "OK"
 }
