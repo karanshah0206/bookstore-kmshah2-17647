@@ -4,16 +4,36 @@
 
 use axum::{
   Json,
-  extract::{Path, Query},
+  extract::{Path, Query, rejection::JsonRejection},
   http::StatusCode,
 };
+use validator::Validate;
 
 use crate::dto::{customer::*, failure::*};
 
 /// Endpoint to enter a new customer in the registry.
 pub async fn create_customer(
-  Json(payload): Json<Customer>,
+  payload: Result<Json<Customer>, JsonRejection>,
 ) -> Result<(StatusCode, Json<CustomerWithId>), (StatusCode, Json<Failure>)> {
+  let payload = match payload {
+    Ok(payload) => payload,
+    Err(_) => {
+      return Err((
+        StatusCode::BAD_REQUEST,
+        Json(Failure::new("Badly formatted request body.".to_string())),
+      ));
+    }
+  };
+
+  if let Err(e) = payload.validate() {
+    return Err((
+      StatusCode::BAD_REQUEST,
+      Json(Failure {
+        message: e.to_string(),
+      }),
+    ));
+  }
+
   todo!();
 }
 
@@ -28,5 +48,9 @@ pub async fn fetch_customer_by_id(
 pub async fn fetch_customer_by_user_id(
   Query(params): Query<UserIdQuery>,
 ) -> Result<(StatusCode, Json<CustomerWithId>), StatusCode> {
+  if params.validate().is_err() {
+    return Err(StatusCode::BAD_REQUEST);
+  }
+
   todo!();
 }

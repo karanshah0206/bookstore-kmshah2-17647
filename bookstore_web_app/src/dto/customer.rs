@@ -18,7 +18,7 @@ pub struct Customer {
   #[serde(rename = "address")]
   #[validate(length(min = 1))]
   pub address_1: String,
-  #[serde(rename = "address1")]
+  #[serde(rename = "address2")]
   #[validate(length(min = 1))]
   pub address_2: String,
   #[validate(length(min = 1))]
