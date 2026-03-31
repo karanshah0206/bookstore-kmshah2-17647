@@ -1,5 +1,5 @@
 [package]
-name = "bookstore"
+name = "bookstore_web_app"
 version = "0.1.0"
 authors = ["Karan Manoj Shah <kmshah2@cs.cmu.edu>"]
 edition = "2024"
