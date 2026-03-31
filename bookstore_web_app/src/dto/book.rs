@@ -7,8 +7,10 @@ use serde::{Deserialize, Serialize};
 /// Schema for book entity requests/responses.
 #[derive(Deserialize, Serialize)]
 pub struct Book {
+  #[serde(rename = "ISBN")]
   pub isbn: String,
   pub title: String,
+  #[serde(rename = "Author")]
   pub author: String,
   pub description: String,
   pub genre: String,
@@ -39,11 +41,13 @@ impl Book {
   }
 }
 
-/// Schema for book entity requests/responses.
+/// Schema for book entity requests/responses with a summary.
 #[derive(Deserialize, Serialize)]
 pub struct SummarizedBook {
+  #[serde(rename = "ISBN")]
   pub isbn: String,
   pub title: String,
+  #[serde(rename = "Author")]
   pub author: String,
   pub description: String,
   pub genre: String,
@@ -53,7 +57,7 @@ pub struct SummarizedBook {
 }
 
 impl SummarizedBook {
-  /// Create a book entity response.
+  /// Create a book entity response with a summary.
   pub fn new(
     isbn: String,
     title: String,
