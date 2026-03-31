@@ -4,16 +4,17 @@
 
 use axum::{
   Json, Router,
-  extract::{Path, rejection::JsonRejection},
+  extract::{Path, State, rejection::JsonRejection},
   http::StatusCode,
   routing::{get, post, put},
 };
 use validator::Validate;
 
 use crate::dto::{book::*, failure::*};
+use crate::state::tcp::HttpConnectionState;
 
 /// Construct and return a router for all book-specific endpoints.
-pub fn get_router() -> Router {
+pub fn get_router() -> Router<HttpConnectionState> {
   Router::new()
     .route("/books", post(create_book))
     .route("/books/{isbn}", put(update_book))
@@ -23,6 +24,7 @@ pub fn get_router() -> Router {
 
 /// Handler to enter a new book in the registry.
 async fn create_book(
+  State(alb_conn_state): State<HttpConnectionState>,
   payload: Result<Json<Book>, JsonRejection>,
 ) -> Result<(StatusCode, Json<Book>), (StatusCode, Json<Failure>)> {
   let payload = match payload {
@@ -49,6 +51,7 @@ async fn create_book(
 
 /// Handler to update book details using an ISBN key.
 async fn update_book(
+  State(alb_conn_state): State<HttpConnectionState>,
   Path(isbn): Path<String>,
   payload: Result<Json<Book>, JsonRejection>,
 ) -> Result<(StatusCode, Json<Book>), (StatusCode, Json<Failure>)> {
@@ -85,6 +88,7 @@ async fn update_book(
 
 /// Handler to fetch book details using an ISBN key.
 async fn fetch_book(
+  State(alb_conn_state): State<HttpConnectionState>,
   Path(isbn): Path<String>,
 ) -> Result<(StatusCode, Json<BookWithSummary>), StatusCode> {
   if isbn.is_empty() {

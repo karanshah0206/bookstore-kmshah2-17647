@@ -4,16 +4,17 @@
 
 use axum::{
   Json, Router,
-  extract::{Path, Query, rejection::JsonRejection},
+  extract::{Path, Query, State, rejection::JsonRejection},
   http::StatusCode,
   routing::{get, post},
 };
 use validator::Validate;
 
 use crate::dto::{customer::*, failure::*};
+use crate::state::tcp::HttpConnectionState;
 
 /// Construct and return a router for all customer-specific endpoints.
-pub fn get_router() -> Router {
+pub fn get_router() -> Router<HttpConnectionState> {
   Router::new()
     .route("/customers", post(create_customer))
     .route("/customers", get(fetch_customer_by_user_id))
@@ -22,6 +23,7 @@ pub fn get_router() -> Router {
 
 /// Handler to enter a new customer in the registry.
 async fn create_customer(
+  State(alb_conn_state): State<HttpConnectionState>,
   payload: Result<Json<Customer>, JsonRejection>,
 ) -> Result<(StatusCode, Json<CustomerWithId>), (StatusCode, Json<Failure>)> {
   let payload = match payload {
@@ -48,6 +50,7 @@ async fn create_customer(
 
 /// Handler to fetch customer details using an ID key.
 async fn fetch_customer_by_id(
+  State(alb_conn_state): State<HttpConnectionState>,
   Path(id): Path<u64>,
 ) -> Result<(StatusCode, Json<CustomerWithId>), StatusCode> {
   todo!();
@@ -55,6 +58,7 @@ async fn fetch_customer_by_id(
 
 /// Handler to fetch customer details using a user ID key.
 async fn fetch_customer_by_user_id(
+  State(alb_conn_state): State<HttpConnectionState>,
   Query(params): Query<UserIdQuery>,
 ) -> Result<(StatusCode, Json<CustomerWithId>), StatusCode> {
   if params.validate().is_err() {
