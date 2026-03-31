@@ -106,6 +106,7 @@ pub struct UserIdQuery {
   pub user_id: String,
 }
 
+/// Custom validator function for US states attribute.
 fn validate_us_state(state: &str) -> Result<(), ValidationError> {
   const US_STATES: [&str; 50] = [
     "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS",

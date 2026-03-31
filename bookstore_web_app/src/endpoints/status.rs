@@ -1,9 +1,10 @@
 // Bookstore Web App Service
-//! Health-check (status) endpoint handler for the Bookstore Web App Service.
+//! Health-check (Status) Endpoint Handler for the Bookstore Web App Service.
 // Author: Karan Manoj Shah <kmshah2@cs.cmu.edu>
 
 use axum::{Router, routing::get};
 
+/// Construct and return a router for the health-check endpoint.
 pub fn get_router() -> Router {
   Router::new().route("/status", get(status))
 }
