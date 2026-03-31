@@ -43,7 +43,7 @@ impl Book {
 
 /// Schema for book entity requests/responses with a summary.
 #[derive(Deserialize, Serialize)]
-pub struct SummarizedBook {
+pub struct BookWithSummary {
   #[serde(rename = "ISBN")]
   pub isbn: String,
   pub title: String,
@@ -56,7 +56,7 @@ pub struct SummarizedBook {
   pub summary: String,
 }
 
-impl SummarizedBook {
+impl BookWithSummary {
   /// Create a book entity response with a summary.
   pub fn new(
     isbn: String,
@@ -68,7 +68,7 @@ impl SummarizedBook {
     quantity: usize,
     summary: String,
   ) -> Self {
-    SummarizedBook {
+    BookWithSummary {
       isbn,
       title,
       author,
