@@ -26,29 +26,6 @@ pub struct Book {
   pub quantity: u64,
 }
 
-impl Book {
-  /// Create a book entity response.
-  pub fn new(
-    isbn: String,
-    title: String,
-    author: String,
-    description: String,
-    genre: String,
-    price: f64,
-    quantity: u64,
-  ) -> Self {
-    Book {
-      isbn,
-      title,
-      author,
-      description,
-      genre,
-      price,
-      quantity,
-    }
-  }
-}
-
 /// Schema for book entity requests/responses with a summary.
 #[derive(Deserialize, Serialize)]
 pub struct BookWithSummary {
@@ -63,31 +40,6 @@ pub struct BookWithSummary {
   pub price: f64,
   pub quantity: u64,
   pub summary: String,
-}
-
-impl BookWithSummary {
-  /// Create a book entity response with a summary.
-  pub fn new(
-    isbn: String,
-    title: String,
-    author: String,
-    description: String,
-    genre: String,
-    price: f64,
-    quantity: u64,
-    summary: String,
-  ) -> Self {
-    BookWithSummary {
-      isbn,
-      title,
-      author,
-      description,
-      genre,
-      price,
-      quantity,
-      summary,
-    }
-  }
 }
 
 /// Custom deserializer for the price attribute to validate 0-2 decimal places.
