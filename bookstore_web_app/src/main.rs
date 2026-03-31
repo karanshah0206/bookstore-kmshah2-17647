@@ -1,12 +1,13 @@
 // Bookstore Web App Service
-//! Service Driver for the Bookstore Web App Service.
+//! Top-level Environment and Service Driver.
 // Author: Karan Manoj Shah <kmshah2@cs.cmu.edu>
 
 mod dto;
-mod endpoints;
+mod endpoint;
 mod middleware;
+mod state;
 
-use crate::endpoints::{books, customers, status};
+use crate::endpoint::{books, customers, status};
 use crate::middleware::auth;
 
 /// Initialize the service routes and execute the service.

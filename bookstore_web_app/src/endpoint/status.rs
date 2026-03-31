@@ -1,5 +1,5 @@
 // Bookstore Web App Service
-//! Health-check (Status) Endpoint Handler for the Bookstore Web App Service.
+//! Health-check (Status) Endpoint Handler.
 // Author: Karan Manoj Shah <kmshah2@cs.cmu.edu>
 
 use axum::{Router, routing::get};

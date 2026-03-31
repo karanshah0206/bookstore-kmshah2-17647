@@ -1,5 +1,5 @@
 // Bookstore Web App Service
-//! Customer-specific Endpoint Handlers for the Bookstore Web App Service.
+//! Customer-specific Endpoint Handlers.
 // Author: Karan Manoj Shah <kmshah2@cs.cmu.edu>
 
 use axum::{

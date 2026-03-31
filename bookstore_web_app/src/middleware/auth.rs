@@ -1,5 +1,5 @@
 // Bookstore Web App Service
-//! Authentication Middleware for the Bookstore Web App Service.
+//! Authentication Middleware for Auth-protected Routes.
 // Author: Karan Manoj Shah <kmshah2@cs.cmu.edu>
 
 use std::time::{SystemTime, UNIX_EPOCH};
