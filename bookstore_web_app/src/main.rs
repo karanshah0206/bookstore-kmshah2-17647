@@ -4,33 +4,21 @@
 
 mod dto;
 mod endpoints;
+mod middleware;
 
-use axum::{
-  Router,
-  routing::{get, post, put},
-};
-
-use crate::endpoints::{books::*, customers::*};
+use crate::endpoints::{books, customers, status};
+use crate::middleware::auth;
 
 /// Initialize the service routes and execute the service.
 #[tokio::main]
 async fn main() {
-  let app = Router::new()
-    .route("/status", get(status))
-    .route("/books", post(create_book))
-    .route("/books/{isbn}", put(update_book))
-    .route("/books/{isbn}", get(fetch_book))
-    .route("/books/isbn/{isbn}", get(fetch_book))
-    .route("/customers", post(create_customer))
-    .route("/customers", get(fetch_customer_by_user_id))
-    .route("/customers/{id}", get(fetch_customer_by_id));
+  let public_endpoints = status::get_router();
+  let protected_endpoints = books::get_router()
+    .merge(customers::get_router())
+    .route_layer(axum::middleware::from_fn(auth::validate_jwt));
+  let endpoints = public_endpoints.merge(protected_endpoints);
 
   let listener = tokio::net::TcpListener::bind("0.0.0.0:80").await.unwrap();
 
-  axum::serve(listener, app).await.unwrap();
-}
-
-/// Endpoint to indicate Indicate that the service is healthy.
-async fn status() -> &'static str {
-  "OK"
+  axum::serve(listener, endpoints).await.unwrap();
 }
