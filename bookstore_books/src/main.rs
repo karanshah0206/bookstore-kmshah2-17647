@@ -2,6 +2,21 @@
 //! Top-level Environment and Service Driver.
 // Author: Karan Manoj Shah <kmshah2@cs.cmu.edu>
 
-fn main() {
-    println!("Hello, world!");
+mod endpoint;
+
+use crate::endpoint::status;
+
+#[tokio::main]
+async fn main() {
+  // Networking constants.
+  const BIND_ADDR: &str = "0.0.0.0:3000";
+
+  // Routing service endpoints.
+  let endpoints = status::get_router();
+
+  // Binding to target address and port at runtime.
+  let listener = tokio::net::TcpListener::bind(BIND_ADDR).await.unwrap();
+
+  // Serve endpoints on bound listener.
+  axum::serve(listener, endpoints).await.unwrap();
 }
