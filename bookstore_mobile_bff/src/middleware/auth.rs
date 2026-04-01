@@ -6,7 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::{
   extract::Request,
-  http::{header, StatusCode},
+  http::{StatusCode, header},
   middleware::Next,
   response::Response,
 };
