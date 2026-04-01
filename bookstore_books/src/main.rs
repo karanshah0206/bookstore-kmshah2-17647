@@ -4,12 +4,14 @@
 
 mod dto;
 mod endpoint;
+mod state;
 
 use std::env;
 
 use dotenv::dotenv;
 
 use crate::endpoint::{books, status};
+use crate::state::mysql::MySqlConnectionState;
 
 /// Initialize the service routes, connect to database, and execute the service.
 #[tokio::main]
@@ -21,24 +23,13 @@ async fn main() {
   let bind_address: String =
     env::var("BIND_ADDRESS").expect("BIND_ADDRESS environment variable must be set.");
 
-  // Database constants.
-  let database_endpoint =
-    env::var("DATABASE_ENDPOINT").expect("DATABASE_ENDPOINT environment variable must be set.");
-  let database_username =
-    env::var("DATABASE_USERNAME").expect("DATABASE_USERNAME environment variable must be set.");
-  let database_password =
-    env::var("DATABASE_PASSWORD").expect("DATABASE_PASSWORD environment variable must be set.");
-  let database_name =
-    env::var("DATABASE_NAME").expect("DATABASE_NAME environment variable must be set.");
-  let table_name = env::var("TABLE_NAME").expect("TABLE_NAME environment variable must be set.");
-
-  let database_connection_url =
-    format!("mysql://{database_username}:{database_password}@{database_endpoint}/{database_name}");
-
-  println!("{database_connection_url}");
+  // Establish connection pool with database.
+  let connection_pool = MySqlConnectionState::new().await;
 
   // Routing service endpoints.
-  let endpoints = status::get_router().merge(books::get_router());
+  let status_endpoint = status::get_router();
+  let books_endpoint = books::get_router().with_state(connection_pool);
+  let endpoints = status_endpoint.merge(books_endpoint);
 
   // Binding to target address and port at runtime.
   let listener = tokio::net::TcpListener::bind(bind_address).await.unwrap();

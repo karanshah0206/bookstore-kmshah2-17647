@@ -4,15 +4,15 @@
 
 use axum::{
   Json, Router,
-  extract::Path,
+  extract::{Path, State},
   http::StatusCode,
   routing::{get, post, put},
 };
 
-use crate::dto::book::*;
+use crate::{dto::book::*, state::mysql::MySqlConnectionState};
 
 /// Construct and return a router for all book-specific endpoints.
-pub fn get_router() -> Router {
+pub fn get_router() -> Router<MySqlConnectionState> {
   Router::new()
     .route("/books", post(create_book))
     .route("/books/{isbn}", put(update_book))
@@ -20,12 +20,16 @@ pub fn get_router() -> Router {
 }
 
 /// Handler to create a new book record in the database.
-async fn create_book(Json(payload): Json<Book>) -> Result<Json<Book>, StatusCode> {
+async fn create_book(
+  State(pool): State<MySqlConnectionState>,
+  Json(payload): Json<Book>,
+) -> Result<Json<Book>, StatusCode> {
   todo!();
 }
 
 /// Handler to update book record keyed on ISBN in database.
 async fn update_book(
+  State(pool): State<MySqlConnectionState>,
   Path(isbn): Path<String>,
   Json(payload): Json<Book>,
 ) -> Result<Json<Book>, StatusCode> {
@@ -33,6 +37,9 @@ async fn update_book(
 }
 
 /// Handler to fetch book record keyed on ISBN from database.
-async fn fetch_book(Path(isbn): Path<String>) -> Result<Json<BookWithSummary>, StatusCode> {
+async fn fetch_book(
+  State(pool): State<MySqlConnectionState>,
+  Path(isbn): Path<String>,
+) -> Result<Json<BookWithSummary>, StatusCode> {
   todo!();
 }
