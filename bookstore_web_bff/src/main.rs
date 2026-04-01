@@ -7,6 +7,10 @@ mod endpoint;
 mod middleware;
 mod state;
 
+use std::env;
+
+use dotenv::dotenv;
+
 use crate::endpoint::{books, customers, status};
 use crate::middleware::auth;
 use crate::state::tcp::HttpConnectionState;
@@ -14,13 +18,21 @@ use crate::state::tcp::HttpConnectionState;
 /// Initialize the service routes and execute the service.
 #[tokio::main]
 async fn main() {
-  // Networking constants.
-  const BIND_ADDR: &str = "0.0.0.0:80";
-  const ALB_ENDPOINT: &str = "http://localhost:3000";
-  const ALB_CONN_TIMEOUT: u64 = 10; // seconds
+  // Load environment variables.
+  dotenv().ok();
+
+  // Set networking constants.
+  let bind_address: String =
+    env::var("BIND_ADDRESS").expect("BIND_ADDRESS environment variable must be set.");
+  let alb_endpoint: String =
+    env::var("INTERNAL_ALB_URL").expect("INTERNAL_ALB_URL environment variable must be set.");
+  let alb_connection_timeout: u64 = env::var("ALB_CONNECTION_TIMEOUT")
+    .expect("ALB_CONNECTION_TIMEOUT environment variable must be set.")
+    .parse()
+    .expect("ALB_CONNECTION_TIMEOUT must be of type u64.");
 
   // Establish stateful connection with internal application load balancer.
-  let alb_conn_state = HttpConnectionState::new(ALB_ENDPOINT, ALB_CONN_TIMEOUT);
+  let alb_conn_state = HttpConnectionState::new(alb_endpoint, alb_connection_timeout);
 
   // Routing service endpoints.
   let public_endpoints = status::get_router();
@@ -31,7 +43,7 @@ async fn main() {
   let endpoints = public_endpoints.merge(protected_endpoints);
 
   // Binding to target address and port at runtime.
-  let listener = tokio::net::TcpListener::bind(BIND_ADDR).await.unwrap();
+  let listener = tokio::net::TcpListener::bind(bind_address).await.unwrap();
 
   // Serve endpoints on bound listener.
   axum::serve(listener, endpoints).await.unwrap();

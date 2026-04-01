@@ -15,7 +15,7 @@ pub struct HttpConnectionState {
 
 impl HttpConnectionState {
   /// Establish a new HTTP connection with a client and return the connection state.
-  pub fn new(endpoint_url: &str, timeout: u64) -> Self {
+  pub fn new(endpoint_url: String, timeout: u64) -> Self {
     HttpConnectionState {
       http_client: Client::builder()
         .timeout(Duration::from_secs(timeout))
