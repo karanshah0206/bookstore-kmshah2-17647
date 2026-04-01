@@ -56,7 +56,7 @@ async fn create_book(
     Ok(response) => {
       if response.status().is_success() {
         match response.json::<Book>().await {
-          Ok(book) => Ok((StatusCode::OK, Json(book))),
+          Ok(book) => Ok((StatusCode::CREATED, Json(book))),
           _ => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(Failure {
@@ -118,7 +118,7 @@ async fn update_book(
       let status = response.status();
       if status.is_success() {
         match response.json::<Book>().await {
-          Ok(book) => Ok((StatusCode::CREATED, Json(book))),
+          Ok(book) => Ok((StatusCode::OK, Json(book))),
           _ => Err(status),
         }
       } else {
