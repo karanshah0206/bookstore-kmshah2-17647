@@ -15,7 +15,7 @@ use crate::endpoint::{books, customers, status};
 use crate::middleware::auth;
 use crate::state::tcp::HttpConnectionState;
 
-/// Initialize the service routes and execute the service.
+/// Initialize the service routes, connect to internal load balancer, and execute the service.
 #[tokio::main]
 async fn main() {
   // Load environment variables.
