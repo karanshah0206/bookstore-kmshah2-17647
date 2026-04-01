@@ -3,9 +3,10 @@
 // Author: Karan Manoj Shah <kmshah2@cs.cmu.edu>
 
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 
 /// Schema for book entity.
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, FromRow)]
 pub struct Book {
   #[serde(rename = "ISBN")]
   pub isbn: String,
@@ -19,7 +20,7 @@ pub struct Book {
 }
 
 /// Schema for book entity with a summary.
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, FromRow)]
 pub struct BookWithSummary {
   #[serde(rename = "ISBN")]
   pub isbn: String,
