@@ -55,7 +55,7 @@ async fn create_customer(
     Ok(response) => {
       if response.status().is_success() {
         match response.json::<CustomerWithId>().await {
-          Ok(customer) => Ok((StatusCode::OK, Json(customer))),
+          Ok(customer) => Ok((StatusCode::CREATED, Json(customer))),
           _ => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(Failure {
