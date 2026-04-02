@@ -103,7 +103,7 @@ async fn update_book(
     }
   };
 
-  if payload.validate().is_err() {
+  if payload.validate().is_err() || payload.isbn != isbn {
     return Err(StatusCode::BAD_REQUEST);
   }
 
