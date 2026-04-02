@@ -1,0 +1,578 @@
+# AWS Deployment Configuration
+# Author: Karan Manoj Shah <kmshah2@cs.cmu.edu>
+
+# Configuration Parameters Declaration
+Parameters:
+  VpcName:
+    Description: 'A short name for the VPC.'
+    Type: String
+    NoEcho: false
+    Default: BookstoreVPC
+  DBUsername:
+    Description: 'Username to configure as database master user.'
+    Type: String
+    MinLength: '1'
+    MaxLength: '16'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: '1 to 16 chars, must begin with an alphabet, then alphanums.'
+  DBPassword:
+    Description: 'Password to configure for database master user.'
+    Type: String
+    NoEcho: true
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: '8 to 41 chars, alphanums only.'
+
+# AWS Resources Declaration and Specification
+Resources:
+  # Virtual Private Network
+  BookstoreVPC:
+    Type: Aws::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${VpcName}-${AWS::StackName}'
+
+  # Public Subnets for Servers
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: "us-east-1a"
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref BookstoreVPC
+      CidrBlock: 10.0.0.0/24
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-$PublicSubnet1"
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: "us-east-1b"
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref BookstoreVPC
+      CidrBlock: 10.0.1.0/24
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-$PublicSubnet2"
+
+  # Private Subnets for Databases
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: "us-east-1a"
+      VpcId: !Ref BookstoreVPC
+      CidrBlock: 10.0.2.0/24
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-PrivateSubnet1"
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: "us-east-1b"
+      VpcId: !Ref BookstoreVPC
+      CidrBlock: 10.0.3.0/24
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-PrivateSubnet2"
+
+  # Adding Private Subnets to DB Subnet Group
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub "${VpcName}-DBSubnetGroup"
+      SubnetIds:
+        - Ref: PrivateSubnet1
+        - Ref: PrivateSubnet2
+
+  # Internet Gateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    DependsOn: BookstoreVPC
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-InternetGateway"
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref BookstoreVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Route Table and Associations for Public Subnets
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref BookstoreVPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-PublicRouteTable"
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTable: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  # Security Group for the Public-facing Load Balancer
+  PublicLoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Ref "${VpcName}-PublicLoadBalancerSecurityGroup"
+      VpcId: !Ref BookstoreVPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-PublicLoadBalancerSecurityGroup"
+      SecurityGroupIngress:
+        - Description: HTTP
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - Description: HTTPS
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - Description: ANY
+          IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+
+  # Security Group for the Internal Load Balancer
+  PrivateLoadBalancerSecurityGroup:
+    Type: AWC::EC2::SecurityGroup
+    Properties:
+      GroupName: !Ref "${VpcName}-PrivateLoadBalancerSecurityGroup"
+      VpcId: !Ref BookstoreVPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-PrivateLoadBalancerSecurityGroup"
+      SecurityGroupIngress:
+        - Description: MYSQL
+          IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: !GetAtt BookstoreVPC.CidrBlock
+      SecurityGroupEgress:
+        - Description: ANY
+          IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+
+  # Security Group for Public-facing Components
+  PublicSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: PublicLoadBalancerSecurityGroup
+    Properties:
+      GroupName: !Sub "${VpcName}-PublicSecurityGroup"
+      VpcId: !Ref BookstoreVPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-PublicSecurityGroup"
+      SecurityGroupIngress:
+        - Description: SSH
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - Description: HTTP
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId:
+            Fn::GetAtt::
+              - PublicLoadBalancerSecurityGroup
+              - GroupId
+      SecurityGroupEgress:
+        - Description: ANY
+          IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+
+  # Security Group for Internal Components
+  PrivateSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DependsOn: PrivateLoadBalancerSecurityGroup
+    Properties:
+      GroupName: !Sub "${VpcName}-PrivateSecurityGroup"
+      VpcId: !Ref BookstoreVPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-PrivateSecurityGroup"
+      SecurityGroupIngress:
+        - Description: MYSQL
+          IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId:
+            Ref: PrivateLoadBalancerSecurityGroup
+      SecurityGroupEgress:
+        - Description: ANY
+          IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+
+  # Public-facing Load Balancer
+  PublicLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      Name: !Sub "${VpcName}-PublicLoadBalancer"
+      Type: application
+      Scheme: internet-facing
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref PublicLoadBalancerSecurityGroup
+
+  # Internal Load Balancer
+  PrivateLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${VpcName}-PrivateLoadBalancer"
+      Type: application
+      Scheme: internal
+      Subnets:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      SecurityGroups:
+        - !Ref PrivateLoadBalancerSecurityGroup
+
+  # Target Groups for Public-facing Services
+  WebBFFTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: WebBFFTargetGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-WebBFFTargetGroup"
+      Port: 80
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'
+      Targets:
+        - Id: !Ref EC2BookstoreA
+          Port: 80
+        - Id: !Ref EC2BookstoreB
+          Port: 80
+      VpcId: !Ref BookstoreVPC
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: "/status"
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 15
+      HealthyThresholdCount: 5
+      Matcher:
+        HttpCode: '200'
+      UnhealthyThresholdCount: 3
+  MobileBFFTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: MobileBFFTargetGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-MobileBFFTargetGroup"
+      Port: 80
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'
+      Targets:
+        - Id: !Ref EC2BookstoreC
+          Port: 80
+        - Id: !Ref EC2BookstoreD
+          Port: 80
+      VpcId: !Ref BookstoreVPC
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: "/status"
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 15
+      HealthyThresholdCount: 5
+      Matcher:
+        HttpCode: '200'
+      UnhealthyThresholdCount: 3
+
+  # Target Groups for Internal Services
+  CustomersServiceTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: CustomersServiceTargetGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-CustomersServiceTargetGroup"
+      Port: 3000
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'
+      Targets:
+        - Id: !Ref EC2BookstoreA
+          Port: 3000
+        - Id: !Ref EC2BookstoreB
+          Port: 3000
+      VpcId: !Ref BookstoreVPC
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: "/status"
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 15
+      HealthyThresholdCount: 5
+      Matcher:
+        HttpCode: '200'
+      UnhealthyThresholdCount: 3
+  BooksServiceTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: BooksServiceTargetGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-BooksServiceTargetGroup"
+      Port: 3000
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'
+      Targets:
+        - Id: !Ref EC2BookstoreC
+          Port: 3000
+        - Id: !Ref EC2BookstoreD
+          Port: 3000
+      VpcId: !Ref BookstoreVPC
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: "/status"
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 15
+      HealthyThresholdCount: 5
+      Matcher:
+        HttpCode: '200'
+      UnhealthyThresholdCount: 3
+
+  # HTTP Listener for Public-facing Services
+  PublicHTTPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref PublicLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: fixed-response
+          FixedResponseConfig:
+            StatusCode: 400
+            ContentType: text/plain
+            MessageBody: "Request header missing X-Client-Type."
+
+  # HTTP Listener for Internal Services
+  PrivateHTTPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref PrivateLoadBalancer
+      Port: 3000
+      Protocol: HTTP
+      DefaultActions:
+        - Type: fixed-response
+          FixedResponseConfig:
+            StatusCode: 404
+            ContentType: text/plain
+            MessageBody: "Unknown destination address."
+
+  # Listener Rules for Public-facing Services
+  WebClientListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Conditions:
+        - Field: http-header
+          HttpHeaderConfig:
+            HttpHeaderName: X-Client-Type
+            Values:
+              - Web
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref WebBFFTargetGroup
+      ListenerArn: !Ref PublicHTTPListener
+      Priority: 1
+  MobileClientListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Conditions:
+        - Field: http-header
+          HttpHeaderConfig:
+            HttpHeaderName: X-Client-Type
+            Values:
+              - iOS
+              - Android
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref MobileBFFTargetGroup
+      ListenerArn: !Ref PublicHTTPListener
+      Priority: 2
+
+  # Listener Rules for Internal Services
+  CustomersServiceListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /customers*
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref CustomersServiceTargetGroup
+      ListenerArn: !Ref PrivateHTTPListener
+      Priority: 3
+  BooksServiceListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - /books*
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref BooksServiceTargetGroup
+      ListenerArn: !Ref PrivateHTTPListener
+      Priority: 4
+
+  # EC2 Instances for Services
+  EC2BookstoreA:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-053a45fff0a704a47
+      InstanceType: t3.micro
+      KeyName: bookstorekey
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo todo
+      SubnetId: !Ref PublicSubnet1
+      SecurityGroupIds:
+        - !Ref PublicSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-EC2BookstoreA"
+  EC2BookstoreB:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-053a45fff0a704a47
+      InstanceType: t3.micro
+      KeyName: bookstorekey
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo todo
+      SubnetId: !Ref PublicSubnet2
+      SecurityGroupIds:
+        - !Ref PublicSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-EC2BookstoreB"
+  EC2BookstoreC:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-053a45fff0a704a47
+      InstanceType: t3.micro
+      KeyName: bookstorekey
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo todo
+      SubnetId: !Ref PublicSubnet1
+      SecurityGroupIds:
+        - !Ref PublicSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-EC2BookstoreC"
+  EC2BookstoreD:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-053a45fff0a704a47
+      InstanceType: t3.micro
+      KeyName: bookstorekey
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          echo todo
+      SubnetId: !Ref PublicSubnet2
+      SecurityGroupIds:
+        - !Ref PublicSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-EC2BookstoreD"
+
+  # Elastic IP Addresses for Services on EC2
+  ElasticIpA:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref EC2BookstoreA
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-ElasticIpA"
+  ElasticIpB:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref EC2BookstoreB
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-ElasticIpB"
+  ElasticIpC:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref EC2BookstoreC
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-ElasticIpC"
+  ElasticIpD:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref EC2BookstoreD
+      Tags:
+        - Key: Name
+          Value: !Sub "${VpcName}-ElasticIpD"
+
+  # Aurora MySQL Database Cluster
+  DBCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      DBClusterIdentifier: BookstoreDB
+      Engine: aurora-mysql
+      Port: 3306
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      VPCSecurityGroupIds:
+        - !Ref PrivateSecurityGroup
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      StorageEncrypted: true
+      BackupRetentionPeriod: '1'
+      PreferredBackupWindow: 01:00-02:00
+      PreferredMaintenanceWindow: mon:03:00-mon:04:00
+
+  # Aurora MySQL Databases
+  AuroraDBA:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: BookstoreDBA
+      Engine: aurora-mysql
+      DBClusterIdentifier: !Ref DBCluster
+      DBInstanceClass: db.t3.medium
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      PubliclyAccessible: false
+  AuroraDBB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: BookstoreDBB
+      Engine: aurora-mysql
+      DBClusterIdentifier: !Ref DBCluster
+      DBInstanceClass: db.t3.medium
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      PubliclyAccessible: false
