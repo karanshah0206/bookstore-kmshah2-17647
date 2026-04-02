@@ -84,6 +84,7 @@ Resources:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
       DBSubnetGroupName: !Sub "${VpcName}-DBSubnetGroup"
+      DBSubnetGroupDescription: Subnet for database cluster
       SubnetIds:
         - Ref: PrivateSubnet1
         - Ref: PrivateSubnet2
@@ -114,7 +115,7 @@ Resources:
     Type: AWS::EC2::Route
     DependsOn: VPCGatewayAttachment
     Properties:
-      RouteTable: !Ref PublicRouteTable
+      RouteTableId: !Ref PublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
   PublicSubnet1RouteTableAssociation:
@@ -133,6 +134,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: !Sub "${VpcName}-PublicLoadBalancerSecurityGroup"
+      GroupDescription: Allow HTTP and HTTPS in Public Subnet
       VpcId: !Ref BookstoreVPC
       Tags:
         - Key: Name
@@ -158,6 +160,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: !Sub "${VpcName}-PrivateLoadBalancerSecurityGroup"
+      GroupDescription: Allow MySQL in Private Subnet
       VpcId: !Ref BookstoreVPC
       Tags:
         - Key: Name
@@ -179,6 +182,7 @@ Resources:
     DependsOn: PublicLoadBalancerSecurityGroup
     Properties:
       GroupName: !Sub "${VpcName}-PublicSecurityGroup"
+      GroupDescription: Allow SSH and HTTP in Public Endpoints
       VpcId: !Ref BookstoreVPC
       Tags:
         - Key: Name
@@ -208,6 +212,7 @@ Resources:
     DependsOn: PrivateLoadBalancerSecurityGroup
     Properties:
       GroupName: !Sub "${VpcName}-PrivateSecurityGroup"
+      GroupDescription: Allow MySQL in Private Endpoints
       VpcId: !Ref BookstoreVPC
       Tags:
         - Key: Name
@@ -450,7 +455,7 @@ Resources:
     Properties:
       ImageId: ami-053a45fff0a704a47
       InstanceType: t3.micro
-      KeyName: bookstorekey
+      KeyName: vockey
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
@@ -470,7 +475,7 @@ Resources:
     Properties:
       ImageId: ami-053a45fff0a704a47
       InstanceType: t3.micro
-      KeyName: bookstorekey
+      KeyName: vockey
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
@@ -490,7 +495,7 @@ Resources:
     Properties:
       ImageId: ami-053a45fff0a704a47
       InstanceType: t3.micro
-      KeyName: bookstorekey
+      KeyName: vockey
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
@@ -510,7 +515,7 @@ Resources:
     Properties:
       ImageId: ami-053a45fff0a704a47
       InstanceType: t3.micro
-      KeyName: bookstorekey
+      KeyName: vockey
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
@@ -565,7 +570,7 @@ Resources:
       Port: 3306
       MasterUsername: !Ref DBUsername
       MasterUserPassword: !Ref DBPassword
-      VPCSecurityGroupIds:
+      VpcSecurityGroupIds:
         - !Ref PrivateSecurityGroup
       DBSubnetGroupName: !Ref DBSubnetGroup
       StorageEncrypted: true
