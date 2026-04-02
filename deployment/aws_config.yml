@@ -28,7 +28,7 @@ Parameters:
 Resources:
   # Virtual Private Network
   BookstoreVPC:
-    Type: Aws::EC2::VPC
+    Type: AWS::EC2::VPC
     Properties:
       CidrBlock: 10.0.0.0/16
       EnableDnsSupport: true
@@ -132,7 +132,7 @@ Resources:
   PublicLoadBalancerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Ref "${VpcName}-PublicLoadBalancerSecurityGroup"
+      GroupName: !Sub "${VpcName}-PublicLoadBalancerSecurityGroup"
       VpcId: !Ref BookstoreVPC
       Tags:
         - Key: Name
@@ -155,9 +155,9 @@ Resources:
 
   # Security Group for the Internal Load Balancer
   PrivateLoadBalancerSecurityGroup:
-    Type: AWC::EC2::SecurityGroup
+    Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Ref "${VpcName}-PrivateLoadBalancerSecurityGroup"
+      GroupName: !Sub "${VpcName}-PrivateLoadBalancerSecurityGroup"
       VpcId: !Ref BookstoreVPC
       Tags:
         - Key: Name
@@ -194,7 +194,7 @@ Resources:
           FromPort: 80
           ToPort: 80
           SourceSecurityGroupId:
-            Fn::GetAtt::
+            Fn::GetAtt:
               - PublicLoadBalancerSecurityGroup
               - GroupId
       SecurityGroupEgress:
