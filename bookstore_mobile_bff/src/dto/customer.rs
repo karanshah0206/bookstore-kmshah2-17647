@@ -19,8 +19,7 @@ pub struct Customer {
   #[validate(length(min = 1))]
   pub address_1: String,
   #[serde(rename = "address2")]
-  #[validate(length(min = 1))]
-  pub address_2: String,
+  pub address_2: Option<String>,
   #[validate(length(min = 1))]
   pub city: String,
   #[validate(custom(function = "validate_us_state"))]
@@ -40,7 +39,7 @@ pub struct CustomerWithId {
   #[serde(rename = "address")]
   pub address_1: String,
   #[serde(rename = "address2")]
-  pub address_2: String,
+  pub address_2: Option<String>,
   pub city: String,
   pub state: String,
   pub zipcode: String,

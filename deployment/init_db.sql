@@ -15,11 +15,11 @@ CREATE TABLE `books` (
 
 CREATE TABLE `customers` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `user_id` varchar(255) NOT NULL,
   `name` varchar(255) NOT NULL,
   `phone` varchar(255) NOT NULL,
-  `address_1` varchar(255) DEFAULT NULL,
-  `address_2` varchar(255) NOT NULL,
+  `address_1` varchar(255) NOT NULL,
+  `address_2` varchar(255) DEFAULT NULL,
   `city` varchar(255) NOT NULL,
   `state` varchar(255) NOT NULL,
   `zipcode` varchar(255) NOT NULL,
