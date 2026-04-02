@@ -22,6 +22,7 @@ pub struct Book {
   #[validate(length(min = 1))]
   pub genre: String,
   #[serde(deserialize_with = "deserialize_price")]
+  #[validate(range(min = 0.0))]
   pub price: f64,
   pub quantity: u64,
 }
