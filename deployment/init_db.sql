@@ -1,6 +1,8 @@
 -- Database Initialization Scripts
 -- Author: Karan Manoj Shah <kmshah2@cs.cmu.edu>
 
+CREATE DATABASE IF NOT EXISTS bookstore;
+
 CREATE TABLE `books` (
   `isbn` varchar(255) NOT NULL,
   `title` varchar(255) NOT NULL,
