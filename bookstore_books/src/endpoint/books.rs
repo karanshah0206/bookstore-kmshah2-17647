@@ -8,9 +8,11 @@ use axum::{
   http::StatusCode,
   routing::{get, post, put},
 };
+use reqwest::Client;
 use sqlx::{Error, query, query_as};
 
-use crate::{dto::book::*, state::mysql::MySqlConnectionState};
+use crate::dto::{book::*, gemini::*};
+use crate::state::mysql::MySqlConnectionState;
 
 /// Construct and return a router for all book-specific endpoints.
 pub fn get_router() -> Router<MySqlConnectionState> {
@@ -25,7 +27,10 @@ async fn create_book(
   State(db_connection): State<MySqlConnectionState>,
   Json(payload): Json<Book>,
 ) -> Result<Json<Book>, StatusCode> {
-  let summary = "Windows 10".to_string();
+  let summary = gemini_generate_summary(&payload).await.unwrap_or_else(|e| {
+    eprintln!("Failed to generate Gemini summary: {e}");
+    fallback_summary(&payload)
+  });
 
   match query(
     r#"
@@ -108,4 +113,74 @@ async fn fetch_book(
       Err(StatusCode::INTERNAL_SERVER_ERROR)
     }
   }
+}
+
+/// Attempt generating a book summary using Gemini.
+async fn gemini_generate_summary(book: &Book) -> Result<String, String> {
+  let api_key = std::env::var("GEMINI_API_KEY")
+    .map_err(|_| "GEMINI_API_KEY environment variable is not set".to_string())?;
+
+  let prompt = format!(
+    "You are a book-summary API. Return only a summary in 1-2 sentences. Never ask for more details. Never mention missing information. If fields look generic, still produce a plausible concise summary using available genre/description context.\n\nTitle: {}\nAuthor: {}\nGenre: {}\nDescription: {}",
+    book.title, book.author, book.genre, book.description
+  );
+
+  let request_body = GeminiRequest {
+    contents: vec![GeminiContent {
+      parts: vec![GeminiPart { text: prompt }],
+    }],
+    generation_config: GeminiGenerationConfig {
+      temperature: 0.2,
+      max_output_tokens: 120,
+    },
+  };
+
+  let endpoint = format!(
+    "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
+    "gemini-2.5-flash-lite", api_key
+  );
+
+  let response = Client::new()
+    .post(endpoint)
+    .json(&request_body)
+    .send()
+    .await
+    .map_err(|e| format!("Gemini request failed: {e}"))?;
+
+  let status = response.status();
+  if !status.is_success() {
+    let body = response
+      .text()
+      .await
+      .unwrap_or_else(|_| "Unable to read Gemini error response".to_string());
+    return Err(format!("Gemini returned status {status}: {body}"));
+  }
+
+  let gemini_response: GeminiResponse = response
+    .json()
+    .await
+    .map_err(|e| format!("Failed to parse Gemini response: {e}"))?;
+
+  gemini_response
+    .candidates
+    .as_ref()
+    .and_then(|candidates| candidates.first())
+    .and_then(|candidate| candidate.content.as_ref())
+    .and_then(|content| content.parts.as_ref())
+    .and_then(|parts| parts.first())
+    .and_then(|part| part.text.as_deref())
+    .map(|text| text.trim().to_string())
+    .filter(|text| !text.is_empty())
+    .ok_or_else(|| "Gemini returned an empty summary".to_string())
+}
+
+/// Use a fixed summary structure as backup if LLM generation fails.
+fn fallback_summary(book: &Book) -> String {
+  format!(
+    "{} by {} is a {} book. {}",
+    book.title,
+    book.author,
+    book.genre,
+    book.description.chars().take(180).collect::<String>()
+  )
 }
