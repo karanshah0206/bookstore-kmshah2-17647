@@ -14,6 +14,7 @@
 - Rust with Axum and Tokio for the services.
 - Services containerized at deployment with Docker to EC2 t3.micro instances.
 - RDS Aurora cluster using MySQL for database.
+- Hands-free provisioning of AWS infrastructure through CloudFormation.
 - Google Gemini 2.5 Flash Lite for fast book summary generation.
 
 ## Runtime Architecture Specification
