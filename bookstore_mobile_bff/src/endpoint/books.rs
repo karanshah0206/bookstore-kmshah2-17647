@@ -133,7 +133,7 @@ async fn update_book(
 async fn fetch_book(
   State(alb_conn_state): State<HttpConnectionState>,
   Path(isbn): Path<String>,
-) -> Result<(StatusCode, Json<BookWithSummary>), StatusCode> {
+) -> Result<(StatusCode, Json<BookResponse>), StatusCode> {
   if isbn.is_empty() {
     return Err(StatusCode::BAD_REQUEST);
   }
@@ -148,10 +148,14 @@ async fn fetch_book(
       let status = response.status();
       if status.is_success() {
         match response.json::<BookWithSummary>().await {
-          Ok(mut book) => {
-            transform_genre(&mut book);
-            Ok((StatusCode::OK, Json(book)))
-          }
+          Ok(book) => Ok((
+            StatusCode::OK,
+            Json(if book.genre == "non-fiction" {
+              BookResponse::NumericGenre(BookWithSummaryNumericGenre::non_fiction_from_book(book))
+            } else {
+              BookResponse::StringGenre(book)
+            }),
+          )),
           _ => Err(status),
         }
       } else {

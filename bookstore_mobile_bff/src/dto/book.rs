@@ -27,6 +27,14 @@ pub struct Book {
   pub quantity: u64,
 }
 
+/// Schema for book repsonse with multiple genre-based schema type.
+#[derive(Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum BookResponse {
+  NumericGenre(BookWithSummaryNumericGenre),
+  StringGenre(BookWithSummary),
+}
+
 /// Schema for book entity requests/responses with a summary.
 #[derive(Deserialize, Serialize)]
 pub struct BookWithSummary {
@@ -41,6 +49,38 @@ pub struct BookWithSummary {
   pub price: f64,
   pub quantity: u64,
   pub summary: String,
+}
+
+/// Schema for book entity requests/responses with a summary.
+#[derive(Deserialize, Serialize)]
+pub struct BookWithSummaryNumericGenre {
+  #[serde(rename = "ISBN")]
+  pub isbn: String,
+  pub title: String,
+  #[serde(rename = "Author")]
+  pub author: String,
+  pub description: String,
+  pub genre: u64,
+  #[serde(deserialize_with = "deserialize_price")]
+  pub price: f64,
+  pub quantity: u64,
+  pub summary: String,
+}
+
+impl BookWithSummaryNumericGenre {
+  /// Generate a book response for a book with non-fiction genre.
+  pub fn non_fiction_from_book(book: BookWithSummary) -> Self {
+    BookWithSummaryNumericGenre {
+      isbn: book.isbn,
+      title: book.title,
+      author: book.author,
+      description: book.description,
+      genre: 3,
+      price: book.price,
+      quantity: book.quantity,
+      summary: book.summary,
+    }
+  }
 }
 
 /// Custom deserializer for the price attribute to validate 0-2 decimal places.
@@ -64,11 +104,4 @@ where
   num
     .as_f64()
     .ok_or_else(|| serde::de::Error::custom("Badly formatted price attribute."))
-}
-
-/// Transform genre in book fetch response to a mobile-friendly version.
-pub fn transform_genre(book: &mut BookWithSummary) {
-  if book.genre == "non-fiction" {
-    book.genre = "3".to_string();
-  }
 }
