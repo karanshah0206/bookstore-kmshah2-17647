@@ -80,6 +80,6 @@ impl CustomerCrmService {
 async fn main() -> Result<()> {
   dotenv().ok();
 
-  let service = consumer::CustomerCrmService::new()?;
+  let service = CustomerCrmService::new()?;
   service.run().await
 }
