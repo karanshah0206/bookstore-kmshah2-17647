@@ -289,6 +289,22 @@ Resources:
       Tags:
         - Key: Name
           Value: !Sub "${VpcName}-EksSecurityGroup"
+      SecurityGroupEgress:
+        - Description: Allow HTTP outbound traffic to internet
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - Description: Allow HTTPS outbound traffic to internet
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - Description: Allow DNS queries
+          IpProtocol: udp
+          FromPort: 53
+          ToPort: 53
+          CidrIp: 0.0.0.0/0
 
   # DB Security group
   # Port 3306 is the default TCP port used by MySQL databases.
