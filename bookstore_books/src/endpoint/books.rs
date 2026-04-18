@@ -24,7 +24,7 @@ pub fn get_router() -> Router<MySqlConnectionState> {
     .route("/books", post(create_book))
     .route("/books/{isbn}", put(update_book))
     .route("/books/{isbn}", get(fetch_book))
-    .route("/books/isbn/{isbn}/related-books", get(fetch_related_books))
+    .route("/books/{isbn}/related-books", get(fetch_related_books))
 }
 
 /// Handler to create a new book record in the database.
