@@ -1,4 +1,4 @@
-http://bookstore-dev-ExternalALB-69972696.us-east-1.elb.amazonaws.com:80
-http://bookstore-dev-ExternalALB-69972696.us-east-1.elb.amazonaws.com:80
+http://aa76973a3939f4e44bf57c5c83212220-1162542532.us-east-1.elb.amazonaws.com:80
+http://a20ecef5071d5431ea4a85db2605652d-2106960891.us-east-1.elb.amazonaws.com:80
 kmshah2
 karanmshah02@gmail.com
