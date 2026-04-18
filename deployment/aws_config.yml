@@ -530,3 +530,16 @@ Resources:
 #    Properties:
 #      SubnetId: !Ref DBSubnet2
 #      RouteTableId: !Ref PrivateRouteTable02
+
+Outputs:
+  AuroraWriterEndpoint:
+    Description: Writer endpoint for Aurora MySQL cluster.
+    Value: !GetAtt DBClusterAuroraBookstore.Endpoint.Address
+
+  AuroraReaderEndpoint:
+    Description: Reader endpoint for Aurora MySQL cluster.
+    Value: !GetAtt DBClusterAuroraBookstore.ReadEndpoint.Address
+
+  AuroraPort:
+    Description: Port for Aurora MySQL cluster.
+    Value: !GetAtt DBClusterAuroraBookstore.Endpoint.Port
