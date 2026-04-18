@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: bookstore-web-bff
-          image: bookstore-web-bff:latest
+          image: karanshah0206/bookstore-web-bff:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80

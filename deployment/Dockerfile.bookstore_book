@@ -1,0 +1,16 @@
+FROM ubuntu:22.04
+
+WORKDIR /app
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY deployment/binaries/book/bookstore_books /usr/local/bin/bookstore_books
+RUN chmod +x /usr/local/bin/bookstore_books
+
+ENV BIND_ADDRESS=0.0.0.0:3000
+
+EXPOSE 3000
+
+CMD ["/usr/local/bin/bookstore_books"]

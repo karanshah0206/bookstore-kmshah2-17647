@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: bookstore-books
-          image: bookstore-books:latest
+          image: karanshah0206/bookstore-book:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
