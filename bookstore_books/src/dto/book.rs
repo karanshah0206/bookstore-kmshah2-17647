@@ -47,10 +47,9 @@ pub struct ShortBookResponseResponse {
 /// Schema for book recommendations request from external service.
 #[derive(Deserialize, Serialize)]
 pub struct ShortBookResponseRequest {
-  #[serde(rename = "ISBN")]
   pub isbn: String,
   pub title: String,
-  #[serde(rename = "Author")]
+  #[serde(rename = "authors")]
   pub author: String,
   pub publisher: String,
 }
