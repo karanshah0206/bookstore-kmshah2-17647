@@ -137,7 +137,7 @@ async fn fetch_related_books(
 
   let recommendation_endpoint =
     std::env::var("RECOMMENDATION_ENDPOINT").map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-  let request_url = format!("{recommendation_endpoint}/recommended-titles/{isbn}");
+  let request_url = format!("{recommendation_endpoint}/recommended-titles/isbn/{isbn}");
 
   let response = match timeout(
     RECOMMENDATION_TIMEOUT,
