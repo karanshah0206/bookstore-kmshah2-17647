@@ -168,7 +168,9 @@ async fn fetch_related_books(
   close_circuit();
 
   let status = response.status();
-  if status == StatusCode::NO_CONTENT || !status.is_success() {
+  if status == StatusCode::NOT_FOUND {
+    Err(StatusCode::NO_CONTENT)
+  } else if status == StatusCode::NO_CONTENT || !status.is_success() {
     Err(status)
   } else {
     match response.json::<Vec<ShortBookResponse>>().await {
