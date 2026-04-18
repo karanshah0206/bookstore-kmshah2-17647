@@ -11,7 +11,7 @@ use std::env;
 use dotenv::dotenv;
 
 use crate::endpoint::{customers, status};
-use crate::state::mysql::MySqlConnectionState;
+use crate::state::AppState;
 
 /// Initialize the service routes, connect to database, and execute the service.
 #[tokio::main]
@@ -23,12 +23,12 @@ async fn main() {
   let bind_address: String =
     env::var("BIND_ADDRESS").expect("BIND_ADDRESS environment variable must be set.");
 
-  // Establish connection pool with database.
-  let connection_pool = MySqlConnectionState::new().await;
+  // Establish application state with database and Kafka producer.
+  let app_state = AppState::new().await;
 
   // Routing service endpoints.
   let status_endpoint = status::get_router();
-  let customers_endpoint = customers::get_router().with_state(connection_pool);
+  let customers_endpoint = customers::get_router().with_state(app_state);
   let endpoints = status_endpoint.merge(customers_endpoint);
 
   // Binding to target address and port at runtime.

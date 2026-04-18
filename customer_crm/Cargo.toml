@@ -1,15 +1,15 @@
 [package]
-name = "bookstore_customers"
+name = "customer_crm"
 version = "0.1.0"
 authors = ["Karan Manoj Shah <kmshah2@cs.cmu.edu>"]
 edition = "2024"
 publish = false
 
 [dependencies]
-axum = "0.8.8"
+anyhow = "1.0.98"
 dotenv = "0.15.0"
+lettre = { version = "0.11.19", default-features = false, features = ["builder", "smtp-transport", "tokio1-rustls-tls"] }
+rdkafka = { version = "0.36.2", features = ["cmake-build", "tokio"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
-rdkafka = { version = "0.36.2", features = ["cmake-build", "tokio"] }
-sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "mysql", "tls-rustls"] }
 tokio = { version = "1.50.0", features = ["full"] }

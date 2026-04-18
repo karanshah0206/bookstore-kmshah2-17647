@@ -10,10 +10,10 @@ use axum::{
 };
 use sqlx::{Error, query, query_as};
 
-use crate::{dto::customer::*, state::mysql::MySqlConnectionState};
+use crate::{dto::customer::*, state::AppState};
 
 /// Construct and return a router for all customer-specific endpoints.
-pub fn get_router() -> Router<MySqlConnectionState> {
+pub fn get_router() -> Router<AppState> {
   Router::new()
     .route("/customers", post(create_customer))
     .route("/customers/id/{id}", get(fetch_customer_by_id))
@@ -25,7 +25,7 @@ pub fn get_router() -> Router<MySqlConnectionState> {
 
 /// Handler to create a new customer record in the database.
 async fn create_customer(
-  State(db_connection): State<MySqlConnectionState>,
+  State(app_state): State<AppState>,
   Json(payload): Json<Customer>,
 ) -> Result<Json<CustomerWithId>, StatusCode> {
   match query(
@@ -42,13 +42,23 @@ async fn create_customer(
   .bind(&payload.city)
   .bind(&payload.state)
   .bind(&payload.zipcode)
-  .execute(&db_connection.pool)
+  .execute(&app_state.mysql.pool)
   .await
   {
-    Ok(response) => Ok(Json(CustomerWithId::from_customer_add_id(
-      payload,
-      response.last_insert_id(),
-    ))),
+    Ok(response) => {
+      let customer = CustomerWithId::from_customer_add_id(payload, response.last_insert_id());
+
+      if let Err(e) = app_state
+        .kafka
+        .publish_customer_registered_event(&customer)
+        .await
+      {
+        eprintln!("{e}");
+        return Err(StatusCode::INTERNAL_SERVER_ERROR);
+      }
+
+      Ok(Json(customer))
+    }
     Err(Error::Database(db_error)) if db_error.is_unique_violation() => {
       Err(StatusCode::UNPROCESSABLE_ENTITY)
     }
@@ -61,12 +71,12 @@ async fn create_customer(
 
 /// Handler to fetch customer record keyed on ID from database.
 async fn fetch_customer_by_id(
-  State(db_connection): State<MySqlConnectionState>,
+  State(app_state): State<AppState>,
   Path(id): Path<u64>,
 ) -> Result<Json<CustomerWithId>, StatusCode> {
   match query_as::<_, CustomerWithId>(r#"SELECT * FROM customers WHERE id = ?"#)
     .bind(&id)
-    .fetch_one(&db_connection.pool)
+    .fetch_one(&app_state.mysql.pool)
     .await
   {
     Ok(customer) => Ok(Json(customer)),
@@ -80,12 +90,12 @@ async fn fetch_customer_by_id(
 
 /// Handler to fetch customer record keyed on user ID from database.
 async fn fetch_customer_by_user_id(
-  State(db_connection): State<MySqlConnectionState>,
+  State(app_state): State<AppState>,
   Path(user_id): Path<String>,
 ) -> Result<Json<CustomerWithId>, StatusCode> {
   match query_as::<_, CustomerWithId>(r#"SELECT * FROM customers WHERE user_id = ?"#)
     .bind(&user_id)
-    .fetch_one(&db_connection.pool)
+    .fetch_one(&app_state.mysql.pool)
     .await
   {
     Ok(customer) => Ok(Json(customer)),
