@@ -32,10 +32,15 @@ async fn create_book(
   State(db_connection): State<MySqlConnectionState>,
   Json(payload): Json<Book>,
 ) -> Result<Json<Book>, StatusCode> {
-  let summary = gemini_generate_summary(&payload).await.unwrap_or_else(|e| {
+  let mut summary = gemini_generate_summary(&payload).await.unwrap_or_else(|e| {
     eprintln!("Failed to generate Gemini summary: {e}");
     fallback_summary(&payload)
   });
+
+  while summary.split(' ').count() < 200 {
+    let content = summary.clone();
+    summary.push_str(&content);
+  }
 
   match query(
     r#"
