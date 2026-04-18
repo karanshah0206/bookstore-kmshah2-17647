@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-crm
+  namespace: bookstore-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-crm
+  template:
+    metadata:
+      labels:
+        app: customer-crm
+    spec:
+      containers:
+        - name: customer-crm
+          image: customer-crm:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka.bookstore-ns.svc.cluster.local:9092"
+            - name: KAFKA_GROUP_ID
+              value: "customer-crm"
+            - name: KAFKA_TOPIC
+              value: "kmshah2.customer.evt"
+            - name: SMTP_USERNAME
+              value: "replace-with-smtp-username"
+            - name: SMTP_APP_PASSWORD
+              value: "replace-with-smtp-password"
+            - name: SMTP_FROM_ADDRESS
+              value: "replace-with-from-address@example.com"
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - kill -0 1
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 2
+            failureThreshold: 3

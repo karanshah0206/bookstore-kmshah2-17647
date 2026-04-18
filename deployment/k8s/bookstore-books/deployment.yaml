@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookstore-books
+  namespace: bookstore-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bookstore-books
+  template:
+    metadata:
+      labels:
+        app: bookstore-books
+    spec:
+      containers:
+        - name: bookstore-books
+          image: bookstore-books:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: BIND_ADDRESS
+              value: "0.0.0.0:3000"
+            - name: DATABASE_ENDPOINT
+              value: "books-mysql.bookstore-ns.svc.cluster.local:3306"
+            - name: DATABASE_USERNAME
+              value: "bookstore_user"
+            - name: DATABASE_PASSWORD
+              value: "bookstore_password"
+            - name: DATABASE_NAME
+              value: "books"
+            - name: RECOMMENDATION_ENDPOINT
+              value: "http://recommendation.bookstore-ns.svc.cluster.local:8080"
+            - name: GEMINI_API_KEY
+              value: "replace-with-gemini-api-key"
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
