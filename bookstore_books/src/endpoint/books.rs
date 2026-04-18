@@ -128,7 +128,7 @@ async fn fetch_book(
 /// Handler to fetch book recommendations from external service based on ISBN key.
 async fn fetch_related_books(
   Path(isbn): Path<String>,
-) -> Result<Json<Vec<ShortBookResponse>>, StatusCode> {
+) -> Result<Json<Vec<ShortBookResponseResponse>>, StatusCode> {
   if isbn.is_empty() {
     return Err(StatusCode::BAD_REQUEST);
   }
@@ -173,8 +173,8 @@ async fn fetch_related_books(
   } else if status == StatusCode::NO_CONTENT || !status.is_success() {
     Err(status)
   } else {
-    match response.json::<Vec<ShortBookResponse>>().await {
-      Ok(books) => Ok(Json(books)),
+    match response.json::<Vec<ShortBookResponseRequest>>().await {
+      Ok(books) => Ok(Json(recommendations_transformer(books))),
       Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
   }

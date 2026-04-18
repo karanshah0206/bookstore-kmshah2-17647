@@ -34,12 +34,44 @@ pub struct BookWithSummary {
   pub summary: String,
 }
 
-/// Schema for book recommendations.
+/// Schema for book recommendations response.
 #[derive(Deserialize, Serialize)]
-pub struct ShortBookResponse {
+pub struct ShortBookResponseResponse {
   #[serde(rename = "ISBN")]
   pub isbn: String,
   pub title: String,
   #[serde(rename = "Author")]
   pub author: String,
+}
+
+/// Schema for book recommendations request from external service.
+#[derive(Deserialize, Serialize)]
+pub struct ShortBookResponseRequest {
+  #[serde(rename = "ISBN")]
+  pub isbn: String,
+  pub title: String,
+  #[serde(rename = "Author")]
+  pub author: String,
+  pub publisher: String,
+}
+
+impl ShortBookResponseRequest {
+  /// Transform book request schema to book response schema.
+  pub fn to_response(&self) -> ShortBookResponseResponse {
+    ShortBookResponseResponse {
+      isbn: self.isbn.clone(),
+      title: self.title.clone(),
+      author: self.author.clone(),
+    }
+  }
+}
+
+/// Transform the recommendations request vector into response vector.
+pub fn recommendations_transformer(
+  requests: Vec<ShortBookResponseRequest>,
+) -> Vec<ShortBookResponseResponse> {
+  requests
+    .iter()
+    .map(|request| request.to_response())
+    .collect()
 }
