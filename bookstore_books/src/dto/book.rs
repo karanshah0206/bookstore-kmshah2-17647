@@ -33,3 +33,13 @@ pub struct BookWithSummary {
   pub quantity: u64,
   pub summary: String,
 }
+
+/// Schema for book recommendations.
+#[derive(Deserialize, Serialize)]
+pub struct ShortBookResponse {
+  #[serde(rename = "ISBN")]
+  pub isbn: String,
+  pub title: String,
+  #[serde(rename = "Author")]
+  pub author: String,
+}

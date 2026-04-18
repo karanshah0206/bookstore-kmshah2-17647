@@ -10,9 +10,13 @@ use axum::{
 };
 use reqwest::Client;
 use sqlx::{Error, query, query_as};
+use std::time::Duration;
+use tokio::time::timeout;
 
 use crate::dto::{book::*, gemini::*};
-use crate::state::mysql::MySqlConnectionState;
+use crate::state::{circuit_breaker::*, mysql::MySqlConnectionState};
+
+const RECOMMENDATION_TIMEOUT: Duration = Duration::from_secs(3);
 
 /// Construct and return a router for all book-specific endpoints.
 pub fn get_router() -> Router<MySqlConnectionState> {
@@ -20,6 +24,7 @@ pub fn get_router() -> Router<MySqlConnectionState> {
     .route("/books", post(create_book))
     .route("/books/{isbn}", put(update_book))
     .route("/books/{isbn}", get(fetch_book))
+    .route("/books/isbn/{isbn}/related-books", get(fetch_related_books))
 }
 
 /// Handler to create a new book record in the database.
@@ -111,6 +116,59 @@ async fn fetch_book(
     Err(e) => {
       eprintln!("{e}");
       Err(StatusCode::INTERNAL_SERVER_ERROR)
+    }
+  }
+}
+
+/// Handler to fetch book recommendations from external service based on ISBN key.
+async fn fetch_related_books(
+  Path(isbn): Path<String>,
+) -> Result<Json<Vec<ShortBookResponse>>, StatusCode> {
+  if isbn.is_empty() {
+    return Err(StatusCode::BAD_REQUEST);
+  }
+
+  let is_probe_after_open_window = match check_circuit() {
+    CircuitDecision::Reject => return Err(StatusCode::SERVICE_UNAVAILABLE),
+    CircuitDecision::Allow {
+      is_probe_after_open_window,
+    } => is_probe_after_open_window,
+  };
+
+  let recommendation_endpoint =
+    std::env::var("RECOMMENDATION_ENDPOINT").map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+  let request_url = format!("{recommendation_endpoint}/recommended-titles/{isbn}");
+
+  let response = match timeout(
+    RECOMMENDATION_TIMEOUT,
+    Client::new().get(request_url).send(),
+  )
+  .await
+  {
+    Ok(Ok(response)) => response,
+    Ok(Err(e)) => {
+      eprintln!("Recommendation service request failed: {e}");
+      return Err(StatusCode::INTERNAL_SERVER_ERROR);
+    }
+    Err(_) => {
+      open_circuit();
+      return Err(if is_probe_after_open_window {
+        StatusCode::SERVICE_UNAVAILABLE
+      } else {
+        StatusCode::GATEWAY_TIMEOUT
+      });
+    }
+  };
+
+  close_circuit();
+
+  let status = response.status();
+  if status == StatusCode::NO_CONTENT || !status.is_success() {
+    Err(status)
+  } else {
+    match response.json::<Vec<ShortBookResponse>>().await {
+      Ok(books) => Ok(Json(books)),
+      Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
   }
 }

@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookstore-customers
+  namespace: bookstore-ns
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bookstore-customers
+  template:
+    metadata:
+      labels:
+        app: bookstore-customers
+    spec:
+      containers:
+        - name: bookstore-customers
+          image: bookstore-customers:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: BIND_ADDRESS
+              value: "0.0.0.0:3000"
+            - name: DATABASE_ENDPOINT
+              value: "customers-mysql.bookstore-ns.svc.cluster.local:3306"
+            - name: DATABASE_USERNAME
+              value: "bookstore_user"
+            - name: DATABASE_PASSWORD
+              value: "bookstore_password"
+            - name: DATABASE_NAME
+              value: "customers"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka.bookstore-ns.svc.cluster.local:9092"
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3

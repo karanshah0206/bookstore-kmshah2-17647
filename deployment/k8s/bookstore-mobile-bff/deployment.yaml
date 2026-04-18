@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookstore-mobile-bff
+  namespace: bookstore-ns
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bookstore-mobile-bff
+  template:
+    metadata:
+      labels:
+        app: bookstore-mobile-bff
+    spec:
+      containers:
+        - name: bookstore-mobile-bff
+          image: bookstore-mobile-bff:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          env:
+            - name: BIND_ADDRESS
+              value: "0.0.0.0:80"
+            - name: INTERNAL_ALB_URL
+              value: "http://internal-alb.bookstore-ns.svc.cluster.local"
+            - name: ALB_CONNECTION_TIMEOUT
+              value: "5"
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
