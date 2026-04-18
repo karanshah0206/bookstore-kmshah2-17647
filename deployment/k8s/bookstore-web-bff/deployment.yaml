@@ -25,7 +25,7 @@ spec:
             - name: INTERNAL_ALB_URL
               value: "http://internal-alb.bookstore-ns.svc.cluster.local"
             - name: ALB_CONNECTION_TIMEOUT
-              value: "5"
+              value: "10"
           livenessProbe:
             httpGet:
               path: /status

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bookstore-db-endpoints
+  namespace: bookstore-ns
+data:
+  aurora_writer_endpoint: "replace-with-aurora-writer-endpoint:3306"
