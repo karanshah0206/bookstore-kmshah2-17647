@@ -179,7 +179,7 @@ async fn gemini_generate_summary(book: &Book) -> Result<String, String> {
     .map_err(|_| "GEMINI_API_KEY environment variable is not set".to_string())?;
 
   let prompt = format!(
-    "You are a book-summary API. Return only a summary in 1-2 sentences. Never ask for more details. Never mention missing information. If fields look generic, still produce a plausible concise summary using available genre/description context.\n\nTitle: {}\nAuthor: {}\nGenre: {}\nDescription: {}",
+    "You are a book-summary API. The summary MUST be at least 200 words. Never ask for more details. Never mention missing information. If fields look generic, still produce a plausible concise summary using available genre/description context.\n\nTitle: {}\nAuthor: {}\nGenre: {}\nDescription: {}",
     book.title, book.author, book.genre, book.description
   );
 
