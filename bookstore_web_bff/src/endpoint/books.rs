@@ -20,6 +20,7 @@ pub fn get_router() -> Router<HttpConnectionState> {
     .route("/books/{isbn}", put(update_book))
     .route("/books/{isbn}", get(fetch_book))
     .route("/books/isbn/{isbn}", get(fetch_book))
+    .route("/books/isbn/{isbn}/related-books", get(fetch_related_books))
 }
 
 /// Handler to enter a new book in the registry.
@@ -153,6 +154,36 @@ async fn fetch_book(
         }
       } else {
         Err(status)
+      }
+    }
+    Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+  }
+}
+
+/// Handler to fetch related book recommendations using an ISBN key.
+async fn fetch_related_books(
+  State(alb_conn_state): State<HttpConnectionState>,
+  Path(isbn): Path<String>,
+) -> Result<(StatusCode, Json<Vec<ShortBookResponse>>), StatusCode> {
+  if isbn.is_empty() {
+    return Err(StatusCode::BAD_REQUEST);
+  }
+
+  match alb_conn_state
+    .http_client
+    .get(alb_conn_state.endpoint_url + "/books/" + &isbn + "/related-books")
+    .send()
+    .await
+  {
+    Ok(response) => {
+      let status = response.status();
+      if status == StatusCode::NO_CONTENT || !status.is_success() {
+        Err(status)
+      } else {
+        match response.json::<Vec<ShortBookResponse>>().await {
+          Ok(books) => Ok((StatusCode::OK, Json(books))),
+          _ => Err(status),
+        }
       }
     }
     Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),

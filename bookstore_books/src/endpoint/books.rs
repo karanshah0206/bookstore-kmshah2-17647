@@ -20,6 +20,7 @@ pub fn get_router() -> Router<MySqlConnectionState> {
     .route("/books", post(create_book))
     .route("/books/{isbn}", put(update_book))
     .route("/books/{isbn}", get(fetch_book))
+    .route("/books/isbn/{isbn}/related-books", get(fetch_related_books))
 }
 
 /// Handler to create a new book record in the database.
@@ -112,6 +113,34 @@ async fn fetch_book(
       eprintln!("{e}");
       Err(StatusCode::INTERNAL_SERVER_ERROR)
     }
+  }
+}
+
+/// Handler to fetch book recommendations from external service based on ISBN key.
+async fn fetch_related_books(
+  Path(isbn): Path<String>,
+) -> Result<Json<Vec<ShortBookResponse>>, StatusCode> {
+  if isbn.is_empty() {
+    return Err(StatusCode::BAD_REQUEST);
+  }
+
+  let recommendation_endpoint =
+    std::env::var("RECOMMENDATION_ENDPOINT").map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+  let request_url = format!("{recommendation_endpoint}/recommended-titles/{isbn}");
+
+  match Client::new().get(request_url).send().await {
+    Ok(response) => {
+      let status = response.status();
+      if status == StatusCode::NO_CONTENT || !status.is_success() {
+        Err(status)
+      } else {
+        match response.json::<Vec<ShortBookResponse>>().await {
+          Ok(books) => Ok(Json(books)),
+          Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+        }
+      }
+    }
+    Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
   }
 }
 
