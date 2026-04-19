@@ -1,0 +1,18 @@
+FROM ubuntu:22.04
+
+WORKDIR /app
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY deployment/binaries/mobile/bookstore_mobile_bff /usr/local/bin/bookstore_mobile_bff
+RUN chmod +x /usr/local/bin/bookstore_mobile_bff
+
+ENV BIND_ADDRESS=0.0.0.0:80
+ENV INTERNAL_ALB_URL=http://internal-alb:80
+ENV ALB_CONNECTION_TIMEOUT=5
+
+EXPOSE 80
+
+CMD ["/usr/local/bin/bookstore_mobile_bff"]

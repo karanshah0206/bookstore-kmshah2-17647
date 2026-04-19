@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: bookstore-books
-          image: bookstore-books:latest
+          image: karanshah0206/bookstore-book:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -23,15 +23,18 @@ spec:
             - name: BIND_ADDRESS
               value: "0.0.0.0:3000"
             - name: DATABASE_ENDPOINT
-              value: "books-mysql.bookstore-ns.svc.cluster.local:3306"
+              valueFrom:
+                configMapKeyRef:
+                  name: bookstore-db-endpoints
+                  key: aurora_writer_endpoint
             - name: DATABASE_USERNAME
-              value: "bookstore_user"
+              value: "root"
             - name: DATABASE_PASSWORD
-              value: "bookstore_password"
+              value: "rootroot"
             - name: DATABASE_NAME
-              value: "books"
+              value: "bookstore"
             - name: RECOMMENDATION_ENDPOINT
-              value: "http://recommendation.bookstore-ns.svc.cluster.local:8080"
+              value: "http://34.195.107.7"
             - name: GEMINI_API_KEY
               value: "replace-with-gemini-api-key"
           livenessProbe:

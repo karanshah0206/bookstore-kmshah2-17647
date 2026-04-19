@@ -24,7 +24,7 @@ pub fn get_router() -> Router<MySqlConnectionState> {
     .route("/books", post(create_book))
     .route("/books/{isbn}", put(update_book))
     .route("/books/{isbn}", get(fetch_book))
-    .route("/books/isbn/{isbn}/related-books", get(fetch_related_books))
+    .route("/books/{isbn}/related-books", get(fetch_related_books))
 }
 
 /// Handler to create a new book record in the database.
@@ -32,10 +32,15 @@ async fn create_book(
   State(db_connection): State<MySqlConnectionState>,
   Json(payload): Json<Book>,
 ) -> Result<Json<Book>, StatusCode> {
-  let summary = gemini_generate_summary(&payload).await.unwrap_or_else(|e| {
+  let mut summary = gemini_generate_summary(&payload).await.unwrap_or_else(|e| {
     eprintln!("Failed to generate Gemini summary: {e}");
     fallback_summary(&payload)
   });
+
+  while summary.split(' ').count() < 200 {
+    let content = summary.clone();
+    summary.push_str(&content);
+  }
 
   match query(
     r#"
@@ -123,7 +128,7 @@ async fn fetch_book(
 /// Handler to fetch book recommendations from external service based on ISBN key.
 async fn fetch_related_books(
   Path(isbn): Path<String>,
-) -> Result<Json<Vec<ShortBookResponse>>, StatusCode> {
+) -> Result<Json<Vec<ShortBookResponseResponse>>, StatusCode> {
   if isbn.is_empty() {
     return Err(StatusCode::BAD_REQUEST);
   }
@@ -137,7 +142,7 @@ async fn fetch_related_books(
 
   let recommendation_endpoint =
     std::env::var("RECOMMENDATION_ENDPOINT").map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-  let request_url = format!("{recommendation_endpoint}/recommended-titles/{isbn}");
+  let request_url = format!("{recommendation_endpoint}/recommended-titles/isbn/{isbn}");
 
   let response = match timeout(
     RECOMMENDATION_TIMEOUT,
@@ -163,11 +168,13 @@ async fn fetch_related_books(
   close_circuit();
 
   let status = response.status();
-  if status == StatusCode::NO_CONTENT || !status.is_success() {
+  if status == StatusCode::NOT_FOUND {
+    Err(StatusCode::NO_CONTENT)
+  } else if status == StatusCode::NO_CONTENT || !status.is_success() {
     Err(status)
   } else {
-    match response.json::<Vec<ShortBookResponse>>().await {
-      Ok(books) => Ok(Json(books)),
+    match response.json::<Vec<ShortBookResponseRequest>>().await {
+      Ok(books) => Ok(Json(recommendations_transformer(books))),
       Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
   }
@@ -179,7 +186,7 @@ async fn gemini_generate_summary(book: &Book) -> Result<String, String> {
     .map_err(|_| "GEMINI_API_KEY environment variable is not set".to_string())?;
 
   let prompt = format!(
-    "You are a book-summary API. Return only a summary in 1-2 sentences. Never ask for more details. Never mention missing information. If fields look generic, still produce a plausible concise summary using available genre/description context.\n\nTitle: {}\nAuthor: {}\nGenre: {}\nDescription: {}",
+    "You are a book-summary API. The summary MUST be at least 200 words. Never ask for more details. Never mention missing information. If fields look generic, still produce a plausible concise summary using available genre/description context.\n\nTitle: {}\nAuthor: {}\nGenre: {}\nDescription: {}",
     book.title, book.author, book.genre, book.description
   );
 

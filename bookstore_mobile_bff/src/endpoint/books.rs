@@ -20,6 +20,7 @@ pub fn get_router() -> Router<HttpConnectionState> {
     .route("/books/{isbn}", put(update_book))
     .route("/books/{isbn}", get(fetch_book))
     .route("/books/isbn/{isbn}", get(fetch_book))
+    .route("/books/{isbn}/related-books", get(fetch_related_books))
     .route("/books/isbn/{isbn}/related-books", get(fetch_related_books))
 }
 

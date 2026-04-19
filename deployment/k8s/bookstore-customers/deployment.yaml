@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: bookstore-customers
-          image: bookstore-customers:latest
+          image: karanshah0206/bookstore-customers:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -23,15 +23,18 @@ spec:
             - name: BIND_ADDRESS
               value: "0.0.0.0:3000"
             - name: DATABASE_ENDPOINT
-              value: "customers-mysql.bookstore-ns.svc.cluster.local:3306"
+              valueFrom:
+                configMapKeyRef:
+                  name: bookstore-db-endpoints
+                  key: aurora_writer_endpoint
             - name: DATABASE_USERNAME
-              value: "bookstore_user"
+              value: "root"
             - name: DATABASE_PASSWORD
-              value: "bookstore_password"
+              value: "rootroot"
             - name: DATABASE_NAME
-              value: "customers"
+              value: "bookstore"
             - name: KAFKA_BOOTSTRAP_SERVERS
-              value: "kafka.bookstore-ns.svc.cluster.local:9092"
+              value: "98.88.99.206:9092,34.195.107.7:9092,54.221.160.63:9092"
           livenessProbe:
             httpGet:
               path: /status
